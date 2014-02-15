@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+# Test whether you can connect to all the hosts in a list
+
+import argparse
+import linuxconfig.arghelper as h
+import linuxconfig.common as c
+import linuxconfig.sshprobe as p
+
+parser = argparse.ArgumentParser(description="Test whether you can connect to all the hosts in a list")
+
+parser.add_argument("hostsFile", type=h.existingFile, help="Hosts to run the command on, one host per line")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("--ssh", help="Command to log into the hosts")
+group.add_argument("--sshFile", help="File containing an SSH command")
+parser.add_argument("--user", help="User to log into the hosts as")
+parser.add_argument("command", nargs=argparse.REMAINDER, help="An alternate command to run on the hosts")
+
+args = parser.parse_args()
+
+hosts = c.fileToList(args.hostsFile)
+kwargs = {}
+
+if args.ssh:
+    kwargs["sshCommand"] = args.ssh
+
+if args.sshFile:
+    kwargs["sshCommand"] = c.firstLineOfFile(args.sshFile)
+
+if args.user:
+    kwargs["sshUser"] = args.user
+
+if args.command:
+    kwargs["remoteCommand"] = args.command
+
+success = 0
+for h in p.sshProbe(hosts, **kwargs):
+    if h[1]:
+        success += 1
+        if h[2]:
+            print "Host %s says:" % h[0]
+            print h[2].strip("\n")
+    else:
+        print "Failed: %s" % h[0]
+        if h[2]:
+            print h[2].strip("\n")
+
+print "Connected to %d of %d" % (success, len(hosts))

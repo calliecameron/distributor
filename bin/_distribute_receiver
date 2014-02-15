@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+# DON'T CALL THIS COMMAND MANUALLY! - intended to be called by 'distribute'
+# This script runs on a remote machine, to execute a command specified by 'distribute' on the local machine.
+#
+# Usage: _distribute_receiver [-e notificationEmail] [-c emailSenderConfig] [-n name] runID initiator jobNum maxJob remoteCommand [remoteArgs]
+#
+#    runID: unique ID for this run (usually the date and time)
+#    initiator: user and host that started this run
+#    jobNum: numeric ID for this remote job
+#    maxJob: maximum job number; for pretty printing
+#    notificationEmail: email address to notify on completion; may be blank
+#    emailSenderConfig: config file for the email program; must be present if notificationEmail is present
+#    name: human-readable name for this run, for use in emails
+#    remoteCommand: should read an input file through stdin
+#
+# The data to be used as input file to remoteCommand should be passed to this script through standard input.
+#
+
+import argparse
+import linuxconfig.distribute as d
+import os
+import sys
+
+parser = argparse.ArgumentParser(description="DON'T CALL THIS COMMAND MANUALLY! - intended to be called by 'distribute'. This script runs on a remote machine, to execute a command specified by 'distribute' on the local machine.")
+
+parser.add_argument("runID", help="unique ID for this run (usually the date and time)")
+parser.add_argument("initiator", help="user and host that started this run")
+parser.add_argument("jobNum", type=int, help="numeric ID for this remote job")
+parser.add_argument("maxJob", type=int, help="maximum job number; for pretty printing")
+parser.add_argument("remoteCommand", help="should read an input file through stdin")
+parser.add_argument("remoteArgs", nargs=argparse.REMAINDER, default=[], help="arguments passed to the remote command")
+
+parser.add_argument("-e", "--email", default="", help="email address to notify of completion")
+parser.add_argument("-c", "--senderConfig", default="", help="SSMTP config file on the remote hosts used to send emails")
+parser.add_argument("-n", "--name", default="", help="human-readable name for this run, for use in emails")
+
+args = parser.parse_args()
+
+runID = args.runID
+initiator = args.initiator
+jobNum = args.jobNum
+maxJob = args.maxJob
+remoteCommand = args.remoteCommand
+remoteArgs = args.remoteArgs
+notificationEmail = args.email
+emailSenderConfig = args.senderConfig
+name = args.name
+
+rundir = d.RunDir(initiator, runID)
+rundir.makedir()
+inputFile = rundir.partialInputFile(jobNum, maxJob)
+
+with open(inputFile, "w") as f:
+    for line in sys.stdin:
+        f.write(line)
+
+with rundir.openGlobalReceiverLog() as globalLog, rundir.openLocalReceiverLog() as localLog:
+    d.log("%s    %s    received    job %s    %s %s    input: %s    from %s" % (d.nowPretty(), d.me(), d.prettyJob(jobNum, maxJob), remoteCommand, str(remoteArgs), os.path.basename(inputFile), initiator), globalLog, localLog)
+
+
+d.runnerCommand(runID, initiator, jobNum, maxJob, notificationEmail, emailSenderConfig, name, remoteCommand, remoteArgs)

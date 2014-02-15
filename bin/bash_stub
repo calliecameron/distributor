@@ -1,0 +1,17 @@
+#!/bin/bash
+# When you run a command over ssh (e.g. ssh user@host cmd), no shell is involved, so you can't run a command
+# on the user's custom path, or use any other environment variables they define. To overcome this, you can
+# run the command inside a login shell (e.g. shh user@host bash -l cmd) so that the user's profile/bashrc are
+# loaded. However, the argument to bash must be a bash script, not a binary executable or any other type of
+# command. Use this script to overcome this, e.g.:
+#
+#    ssh user@host bash -l cmd with args                 -- works only if cmd is a bash script
+#    ssh user@host bash -l bash_stub cmd with args       -- works for any cmd
+#
+
+if [ -z "${1}" ]; then
+    echo 'bash_stub: no command specified'
+    exit 1
+fi
+
+"${1}" "${@:2}"

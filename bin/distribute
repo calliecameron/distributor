@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+# Command line interface to the linuxconfig.distribute module
+
+import argparse
+import linuxconfig.arghelper as h
+import linuxconfig.distribute as d
+import shlex
+import sys
+
+parser = argparse.ArgumentParser(description="Run a command on multiple remote machines")
+
+parser.add_argument("hostsFile", type=h.existingFile, help="Hosts to run the command on, one host per line")
+parser.add_argument("inputFile", type=h.existingFile, help="Input to be split and passed to the remote commands via stdin")
+parser.add_argument("remoteCommand", help="The command to run on the remote hosts")
+parser.add_argument("remoteArgs", nargs=argparse.REMAINDER, default=[], help="Arguments passed to the remote command")
+
+parser.add_argument("-e", "--email", default=d.defaultNotificationEmail, help="Email address to notify of completion")
+parser.add_argument("-c", "--senderConfig", default=d.defaultEmailSenderConfig, help="SSMTP config file on the remote hosts used to send emails")
+parser.add_argument("-n", "--name", default=d.defaultName, help="Human-readable name for this run, for use in emails")
+parser.add_argument("-g", "--gateway", default=d.defaultGateway, help="Machine for one-off setup actions")
+parser.add_argument("--gatewaySsh", default=d.defaultGatewaySshCommand, help="Command to log into the gateway")
+parser.add_argument("--gatewayScp", default=d.defaultGatewayScpCommand, help="Command to copy files to the gateway")
+parser.add_argument("--gatewayUser", default=d.defaultGatewaySshUser, help="User to log into the gateway as")
+parser.add_argument("--hostsSsh", default=d.defaultHostsSshCommand, help="Command to log into the remote hosts")
+parser.add_argument("--hostsScp", default=d.defaultHostsScpCommand, help="Command to copy files to the remote hosts")
+parser.add_argument("--hostsUser", default=d.defaultHostsSshUser, help="User to log into the remote hosts as")
+parser.add_argument("--gatewaySetup", action="append", default=[], help="Setup command to run on the gateway; may be specified multiple times")
+parser.add_argument("--gatewayCpFile", action="append", nargs=2, default=[], metavar=("SRC", "DST"), help="File to copy to the gateway; may be specified multiple times")
+parser.add_argument("--hostsSetup", action="append", default=[], help="Setup command to run on all the hosts; may be specified multiple times")
+parser.add_argument("--hostsCpFile", action="append", nargs=2, default=[], metavar=("SRC", "DST"), help="File to copy to all the hosts; may be specified multiple times")
+
+args = parser.parse_args()
+
+hosts = []
+with open(args.hostsFile) as f:
+    for line in f:
+        if line.strip():
+            hosts.append(line.strip())
+
+gatewaySetup = map(shlex.split, args.gatewaySetup)
+hostsSetup = map(shlex.split, args.hostsSetup)
+gatewayCpFiles = map(lambda (x, y): (x, y), args.gatewayCpFile) # Convert lists to tuples
+hostsCpFiles = map(lambda (x, y): (x, y), args.hostsCpFile) # Convert lists to tuples
+
+try:
+    d.distribute(hosts,
+                 args.inputFile,
+                 args.remoteCommand,
+                 remoteArgs=args.remoteArgs,
+                 gateway=args.gateway,
+                 gatewaySshCommand=args.gatewaySsh,
+                 gatewayScpCommand=args.gatewayScp,
+                 gatewaySshUser=args.gatewayUser,
+                 hostsSshCommand=args.hostsSsh,
+                 hostsScpCommand=args.hostsScp,
+                 hostsSshUser=args.hostsUser,
+                 gatewaySetup=gatewaySetup,
+                 gatewayFiles=gatewayCpFiles,
+                 hostsSetup=hostsSetup,
+                 hostsFiles=hostsCpFiles,
+                 notificationEmail=args.email,
+                 emailSenderConfig=args.senderConfig,
+                 name=args.name)
+                 
+except d.DistributeException as e:
+    print str(e)
+    sys.exit(1)

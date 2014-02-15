@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+import argparse
+import linuxconfig.arghelper as h
+import linuxconfig.distribute as d
+
+parser = argparse.ArgumentParser(description="Abort a running distributed job")
+
+parser.add_argument("launchDir", type=h.existingDir, help="directory created by distribute when the job was launched")
+
+args = parser.parse_args()
+
+launchDir = d.LaunchDir(args.launchDir)
+launchDir.abort()
