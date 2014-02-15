@@ -1,7 +1,7 @@
 Distributor
 ===========
 
-Run a command on many machines at once, over SSH
+Run a command on many machines at once, over SSH.
 
 From the command line:
 
@@ -12,7 +12,7 @@ From Python:
     import distributor.distribute as d
     d.distribute(["host1", "host2"], "input.txt", "command", ["foo", "bar"])
     
-See the docs in [distribute](bin/distribute) and [distribute.py](modules/distributor/distribute.py) for full details.
+See the docs in `bin/distribute` and `modules/distributor/distribute.py` for full details.
 
 
 Requirements
