@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# Command line interface to the linuxconfig.distribute module
+# Command line interface to the distributor.distribute module
 
 import argparse
-import linuxconfig.arghelper as h
-import linuxconfig.distribute as d
+import distributor.arghelper as h
+import distributor.distribute as d
 import shlex
 import sys
 
@@ -14,16 +14,16 @@ parser.add_argument("inputFile", type=h.existingFile, help="Input to be split an
 parser.add_argument("remoteCommand", help="The command to run on the remote hosts")
 parser.add_argument("remoteArgs", nargs=argparse.REMAINDER, default=[], help="Arguments passed to the remote command")
 
-parser.add_argument("-e", "--email", default=d.defaultNotificationEmail, help="Email address to notify of completion")
-parser.add_argument("-c", "--senderConfig", default=d.defaultEmailSenderConfig, help="SSMTP config file on the remote hosts used to send emails")
-parser.add_argument("-n", "--name", default=d.defaultName, help="Human-readable name for this run, for use in emails")
-parser.add_argument("-g", "--gateway", default=d.defaultGateway, help="Machine for one-off setup actions")
-parser.add_argument("--gatewaySsh", default=d.defaultGatewaySshCommand, help="Command to log into the gateway")
-parser.add_argument("--gatewayScp", default=d.defaultGatewayScpCommand, help="Command to copy files to the gateway")
-parser.add_argument("--gatewayUser", default=d.defaultGatewaySshUser, help="User to log into the gateway as")
-parser.add_argument("--hostsSsh", default=d.defaultHostsSshCommand, help="Command to log into the remote hosts")
-parser.add_argument("--hostsScp", default=d.defaultHostsScpCommand, help="Command to copy files to the remote hosts")
-parser.add_argument("--hostsUser", default=d.defaultHostsSshUser, help="User to log into the remote hosts as")
+parser.add_argument("-e", "--email", help="Email address to notify of completion")
+parser.add_argument("-c", "--senderConfig", help="SSMTP config file on the remote hosts used to send emails")
+parser.add_argument("-n", "--name", help="Human-readable name for this run, for use in emails")
+parser.add_argument("-g", "--gateway", help="Machine for one-off setup actions")
+parser.add_argument("--gatewaySsh", help="Command to log into the gateway")
+parser.add_argument("--gatewayScp", help="Command to copy files to the gateway")
+parser.add_argument("--gatewayUser", help="User to log into the gateway as")
+parser.add_argument("--hostsSsh", help="Command to log into the remote hosts")
+parser.add_argument("--hostsScp", help="Command to copy files to the remote hosts")
+parser.add_argument("--hostsUser", help="User to log into the remote hosts as")
 parser.add_argument("--gatewaySetup", action="append", default=[], help="Setup command to run on the gateway; may be specified multiple times")
 parser.add_argument("--gatewayCpFile", action="append", nargs=2, default=[], metavar=("SRC", "DST"), help="File to copy to the gateway; may be specified multiple times")
 parser.add_argument("--hostsSetup", action="append", default=[], help="Setup command to run on all the hosts; may be specified multiple times")
@@ -37,30 +37,42 @@ with open(args.hostsFile) as f:
         if line.strip():
             hosts.append(line.strip())
 
-gatewaySetup = map(shlex.split, args.gatewaySetup)
-hostsSetup = map(shlex.split, args.hostsSetup)
-gatewayCpFiles = map(lambda (x, y): (x, y), args.gatewayCpFile) # Convert lists to tuples
-hostsCpFiles = map(lambda (x, y): (x, y), args.hostsCpFile) # Convert lists to tuples
+kwargs = {}
+
+def argIfExists(arg, key):
+    if arg:
+        kwargs[key] = arg
+
+argIfExists(args.email, "notificationEmail")
+argIfExists(args.senderConfig, "emailSenderConfig")
+argIfExists(args.name, "name")
+argIfExists(args.gateway, "gateway")
+argIfExists(args.gatewaySsh, "gatewaySshCommand")
+argIfExists(args.gatewayScp, "gatewayScpCommand")
+argIfExists(args.gatewayUser, "gatewaySshUser")
+argIfExists(args.hostsSsh, "hostsSshCommand")
+argIfExists(args.hostsScp, "hostsScpCommand")
+argIfExists(args.hostsUser, "hostsSshUser")
+
+if args.gatewaySetup:
+    kwargs["gatewaySetup"] = map(shlex.split, args.gatewaySetup)
+
+if args.hostsSetup:
+    kwargs["hostsSetup"] = map(shlex.split, args.hostsSetup)
+
+if args.gatewayCpFile:
+    kwargs["gatewayFiles"] = map(lambda (x, y): (x, y), args.gatewayCpFile) # Convert lists to tuples
+
+if args.hostsCpFile:
+    kwargs["hostsFiles"] = map(lambda (x, y): (x, y), args.hostsCpFile) # Convert lists to tuples
+
 
 try:
     d.distribute(hosts,
                  args.inputFile,
                  args.remoteCommand,
                  remoteArgs=args.remoteArgs,
-                 gateway=args.gateway,
-                 gatewaySshCommand=args.gatewaySsh,
-                 gatewayScpCommand=args.gatewayScp,
-                 gatewaySshUser=args.gatewayUser,
-                 hostsSshCommand=args.hostsSsh,
-                 hostsScpCommand=args.hostsScp,
-                 hostsSshUser=args.hostsUser,
-                 gatewaySetup=gatewaySetup,
-                 gatewayFiles=gatewayCpFiles,
-                 hostsSetup=hostsSetup,
-                 hostsFiles=hostsCpFiles,
-                 notificationEmail=args.email,
-                 emailSenderConfig=args.senderConfig,
-                 name=args.name)
+                 **kwargs)
                  
 except d.DistributeException as e:
     print str(e)

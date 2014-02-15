@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import linuxconfig.distribute as d
+import distributor.distribute as d
 import sys
 
 parser = argparse.ArgumentParser(description="Check if a running distributed job has been aborted")

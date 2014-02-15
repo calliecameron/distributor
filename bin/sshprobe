@@ -2,9 +2,9 @@
 # Test whether you can connect to all the hosts in a list
 
 import argparse
-import linuxconfig.arghelper as h
-import linuxconfig.common as c
-import linuxconfig.sshprobe as p
+import distributor.arghelper as h
+import distributor.common as c
+import distributor.sshprobe as p
 
 parser = argparse.ArgumentParser(description="Test whether you can connect to all the hosts in a list")
 

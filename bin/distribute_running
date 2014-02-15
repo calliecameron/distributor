@@ -2,8 +2,8 @@
 
 import argparse
 import glob
-import linuxconfig.arghelper as h
-import linuxconfig.distribute as d
+import distributor.arghelper as h
+import distributor.distribute as d
 import os.path
 
 parser = argparse.ArgumentParser(description="Report the number of jobs still running in a distribute directory")

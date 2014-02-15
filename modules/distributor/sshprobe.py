@@ -1,7 +1,7 @@
 import os
 import shlex
 import subprocess
-import linuxconfig.common as com
+import distributor.common as com
 
 
 def sshProbe(hosts, sshCommand="ssh", sshUser="", remoteCommand=["true"]):

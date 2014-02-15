@@ -5,7 +5,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
-from linuxconfig.common import firstLineOfFile, fileToList, writeFile, writeListFile, linecount, userAtHost, me, now, nowPretty, nowStamp, printAndLog, log
+from distributor.common import firstLineOfFile, fileToList, writeFile, writeListFile, linecount, userAtHost, me, now, nowPretty, nowStamp, printAndLog, log
 
 class DistributeException(Exception):
     def __init__(self, message, cause=None):
@@ -18,69 +18,61 @@ class DistributeException(Exception):
             s += "\n" + str(cause)
         return s
 
-# These are also used by the command-line interface
-defaultRemoteArgs = []
-defaultGateway=""
-defaultGatewaySshCommand="ssh"
-defaultGatewayScpCommand="scp -r"
-defaultGatewaySshUser=""
-defaultHostsSshCommand="ssh"
-defaultHostsScpCommand="scp -r"
-defaultHostsSshUser=""
-defaultGatewaySetup=[]
-defaultGatewayFiles=[]
-defaultHostsSetup=[]
-defaultHostsFiles=[]
-defaultNotificationEmail=""
-defaultEmailSenderConfig=""
-defaultName=""
-
 
 def distribute(hosts,
                inputFile,
                remoteCommand,
-               remoteArgs        = defaultRemoteArgs,
-               gateway           = defaultGateway,
-               gatewaySshCommand = defaultGatewaySshCommand,
-               gatewayScpCommand = defaultGatewayScpCommand,
-               gatewaySshUser    = defaultGatewaySshUser,
-               hostsSshCommand   = defaultHostsSshCommand,
-               hostsScpCommand   = defaultHostsScpCommand,
-               hostsSshUser      = defaultHostsSshUser,
-               gatewaySetup      = defaultGatewaySetup,
-               gatewayFiles      = defaultGatewayFiles,
-               hostsSetup        = defaultHostsSetup,
-               hostsFiles        = defaultHostsFiles,
-               notificationEmail = defaultNotificationEmail,
-               emailSenderConfig = defaultEmailSenderConfig,
-               name=defaultName):
+               remoteArgs        = [],
+               gateway           = "",
+               gatewaySshCommand = "ssh",
+               gatewayScpCommand = "scp -r",
+               gatewaySshUser    = "",
+               hostsSshCommand   = "ssh",
+               hostsScpCommand   = "scp -r",
+               hostsSshUser      = "",
+               gatewaySetup      = [],
+               gatewayFiles      = [],
+               hostsSetup        = [],
+               hostsFiles        = [],
+               notificationEmail = "",
+               emailSenderConfig = "",
+               name              = ""):
     """
-    Run a command on multiple remote machines.
+    Run a command on multiple remote machines. Commands are started
+    asynchronously, i.e. all launched and then this function
+    immediately returns.
 
     hosts
         A list of host names available to run the command on.
     inputFile
-        The file will be split into N chunks, where N is the number of hosts.
-        Each instance of the remote command gets input piped to it through
-        stdin, from one of these chunks.
+        The file will be split into N chunks, where N is the number of
+        hosts. Each instance of the remote command gets input piped to
+        it through stdin, from one of these chunks.
     remoteCommand
-        Command to run on the remote machines. If specified as an absolute
-        or relative path (i.e. not on the user's PATH), then should be in
-        the same place on each host. Should read input through stdin.
+        Command to run on the remote machines. If specified as an
+        absolute or relative path (i.e. not on the user's PATH), then
+        should be in the same place on each host. Relative paths are
+        relative to the user's home directory. Command search uses the
+        user's PATH, as specified when they log in using bash. Command
+        should read input through stdin.
     remoteArgs
-        List of strings; will be passed to each instance of the remote command as arguments.
+        List of strings; will be passed to each instance of the remote
+        command as arguments.
     gateway
-        A host on which one-off configuration tasks can be run before execution
-        of the main command.
+        A host on which one-off configuration tasks can be run before
+        execution of the main command.
     gatewaySshCommand
-        Command used to log in to the gateway. The hostname will be appended
-        to this, so this can be any complicated command, and can contain spaces,
-        so that things such as multi-hop logins are possible.
+        Command used to log in to the gateway. The hostname will be
+        appended to this, so this can be any complicated command, and
+        can contain spaces, so that things such as multi-hop logins
+        are possible.
     gatewayScpCommand
-        Command used to copy files to the gateway; same rules as SSH command.
+        Command used to copy files to the gateway; same rules as SSH
+        command.
     gatewaySshUser
-        If this is non-empty, gatewaySshUser@gateway will be appended to SSH commands
-        for login. Otherwise, just gateway will be appended.
+        If this is non-empty, gatewaySshUser@gateway will be appended
+        to SSH commands for login. Otherwise, just gateway will be
+        appended.
     hostsSshCommand
         Command used to log in to remote hosts.
     hostsScpCommand
@@ -88,27 +80,27 @@ def distribute(hosts,
     hostsSshUser
         User for logins to remote hosts.
     gatewaySetup
-        List of commands (each of which should be a list of strings) to run on the
-        gateway prior to main execution.
+        List of commands (each of which should be a list of strings)
+        to run on the gateway prior to main execution.
     gatewayFiles
-        List of files to transfer to the gateway prior to running the main command.
-        Each element should be a (source, destination) pair suitable for use with
-        the SCP command.
+        List of files to transfer to the gateway prior to running the
+        main command.  Each element should be a (source, destination)
+        pair suitable for use with the SCP command.
     hostsSetup
-        List of commands (each of which should be a list of strings) to run on the
-        each of the hosts prior to main execution.
+        List of commands (each of which should be a list of strings)
+        to run on the each of the hosts prior to main execution.
     hostsFiles
-        List of files to transfer to each of the hosts prior to running the main
-        command. Each element should be a (source, destination) pair suitable for
-        use with the SCP command.
+        List of files to transfer to each of the hosts prior to
+        running the main command. Each element should be a (source,
+        destination) pair suitable for use with the SCP command.
     notificationEmail
         Email address to send completion notifications to.
     emailSenderConfig
-        A file on the remote hosts containing sender email configuration, in ssmtp
-        format.
+        A file on the remote hosts containing sender email
+        configuration, in ssmtp format.
     name
-        Human-readable name for this run for use in emails. If empty, remoteCommand
-        will be used instead.
+        Human-readable name for this run for use in emails. If empty,
+        remoteCommand will be used instead.
 
     Returns on success, throws a DistributeException on failure.
 
@@ -119,9 +111,14 @@ def distribute(hosts,
     3. Run allSetup commands, if any, on each host
     4. Copy allFiles files, if any, to each host
     5. Run main command on all hosts (or as many as needed)
-        a. If notificationEmail and emailSenderConfig are valid, each remote host
-           will send an email when it completes.
+        a. If notificationEmail and emailSenderConfig are valid, each
+           remote host will send an email when it completes.
 
+    A directory starting with 'distribute' is created in the current
+    directory. This contains information on the distribute run that
+    can be used to abort it later, if desired. On each of the running
+    hosts, a directory ~/distributed_run will contain output logs,
+    status information, and so on.
     """
 
     if not hosts:
@@ -482,7 +479,7 @@ def bashifyOpt(opt, arg):
     return optArg(opt, arg, bashifyString)
 
 def bashStub():
-    return ["bash", "-l", "--", "bash_stub"]
+    return ["bash", "-l", "--", "_distribute_stub"]
 
 def remoteSetupCommand(ssh, user, host, cmd, outfile):
     """cmd should be a command in list form"""

@@ -15,7 +15,7 @@
 #
 
 import argparse
-import linuxconfig.distribute as d
+import distributor.distribute as d
 import os.path
 import sys
 

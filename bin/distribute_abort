@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import linuxconfig.arghelper as h
-import linuxconfig.distribute as d
+import distributor.arghelper as h
+import distributor.distribute as d
 
 parser = argparse.ArgumentParser(description="Abort a running distributed job")
 
