@@ -19,6 +19,7 @@ Requirements
 ------------
 
 * Python 2.7
+* Bash and Screen on all remote machines
 * SSH access to all remote machines
 * SSMTP (optional), if you want to be emailed when commands finish
 * Distributor installed on all machines
