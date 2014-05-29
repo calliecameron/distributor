@@ -11,11 +11,11 @@ class DistributeException(Exception):
     def __init__(self, message, cause=None):
         self.message = message
         self.cause = cause
-        
+
     def __str__(self):
         s = self.message
         if self.cause:
-            s += "\n" + str(cause)
+            s += "\n" + str(self.cause)
         return s
 
 
@@ -139,7 +139,7 @@ def distribute(hosts,
 
     if not input:
         raise DistributeException("The input file is empty")
-               
+
     if not remoteCommand:
         raise DistributeException("No remote command specified")
 
@@ -184,7 +184,7 @@ def distribute(hosts,
                 raise DistributeException("Gateway setup commands specified, but gateway configuration is invalid")
 
             printAndLog("Running setup commands on the gateway host...", logfile)
-            
+
             for c in gatewaySetup:
                 remoteSetupCommand(gatewaySshCommand, gatewaySshUser, gateway, c, logfile)
 
@@ -200,7 +200,7 @@ def distribute(hosts,
 
             for (src, dst) in gatewayFiles:
                 scpCommand(gatewayScpCommand, gatewaySshUser, gateway, src, dst, logfile)
-            
+
             printAndLog("Copied files to gateway host", logfile)
 
 
@@ -366,7 +366,7 @@ class LaunchDir(Dir):
 
 
 class RunDir(Dir):
-    
+
     def __init__(self, initiator, runID):
         Dir.__init__(self, os.path.realpath(os.path.join(self.maindir(), runDirName(initiator, runID))))
 
@@ -398,7 +398,7 @@ class RunDir(Dir):
 
     def openCommandReport(self, jobID, maxJob):
         return open(self.commandReportFile(jobID, maxJob), "a")
-    
+
     def createRunningFile(self, jobID, maxJob):
         open(self.runningFile(jobID, maxJob), "w").close()
 
