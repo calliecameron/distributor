@@ -9,8 +9,8 @@ import sys
 
 parser = argparse.ArgumentParser(description="Run a command on multiple remote machines")
 
-parser.add_argument("hostsFile", type=argtypes.exitsing_absolute_path, help="Hosts to run the command on, one host per line")
-parser.add_argument("inputFile", type=argtypes.exitsing_absolute_path, help="Input to be split and passed to the remote commands via stdin")
+parser.add_argument("hostsFile", type=argtypes.existing_absolute_path, help="Hosts to run the command on, one host per line")
+parser.add_argument("inputFile", type=argtypes.existing_absolute_path, help="Input to be split and passed to the remote commands via stdin")
 parser.add_argument("remoteCommand", help="The command to run on the remote hosts")
 parser.add_argument("remoteArgs", nargs=argparse.REMAINDER, default=[], help="Arguments passed to the remote command")
 

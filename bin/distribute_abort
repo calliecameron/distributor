@@ -6,7 +6,7 @@ import distributor.distribute as d
 
 parser = argparse.ArgumentParser(description="Abort a running distributed job")
 
-parser.add_argument("launchDir", type=argtypes.exitsing_absolute_dir, help="directory created by distribute when the job was launched")
+parser.add_argument("launchDir", type=argtypes.existing_absolute_dir, help="directory created by distribute when the job was launched")
 
 args = parser.parse_args()
 
