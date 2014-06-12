@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
+import argtypes
 import glob
-import distributor.arghelper as h
 import distributor.distribute as d
 import os.path
 
 parser = argparse.ArgumentParser(description="Report the number of jobs still running in a distribute directory")
 
-parser.add_argument("dir", type=h.existingDir, help="distribute run directory")
+parser.add_argument("dir", type=argtypes.exitsing_absolute_dir, help="distribute run directory")
 
 args = parser.parse_args()
 

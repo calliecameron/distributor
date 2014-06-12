@@ -2,13 +2,13 @@
 # Test whether you can connect to all the hosts in a list
 
 import argparse
-import distributor.arghelper as h
+import argtypes
 import distributor.common as c
 import distributor.sshprobe as p
 
 parser = argparse.ArgumentParser(description="Test whether you can connect to all the hosts in a list")
 
-parser.add_argument("hostsFile", type=h.existingFile, help="Hosts to run the command on, one host per line")
+parser.add_argument("hostsFile", type=argtypes.exitsing_absolute_path, help="Hosts to run the command on, one host per line")
 group = parser.add_mutually_exclusive_group()
 group.add_argument("--ssh", help="Command to log into the hosts")
 group.add_argument("--sshFile", help="File containing an SSH command")

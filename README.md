@@ -8,10 +8,10 @@ From the command line:
     distribute hosts.txt input.txt command foo bar
 
 From Python:
-    
+
     import distributor.distribute as d
     d.distribute(["host1", "host2"], "input.txt", "command", ["foo", "bar"])
-    
+
 See the docs in `bin/distribute` and `modules/distributor/distribute.py` for full details.
 
 
@@ -19,6 +19,7 @@ Requirements
 ------------
 
 * Python 2.7
+* [argtypes](https://github.com/CallumCameron/argtypes)
 * Bash and Screen on all remote machines
 * SSH access to all remote machines
 * SSMTP (optional), if you want to be emailed when commands finish
