@@ -19,7 +19,7 @@ Requirements
 ------------
 
 * Python 2.7
-* [argtypes](https://github.com/CallumCameron/argtypes)
+* [argtypes](https://github.com/calliecameron/argtypes)
 * Bash and Screen on all remote machines
 * SSH access to all remote machines
 * SSMTP (optional), if you want to be emailed when commands finish
